@@ -1,0 +1,18 @@
+{
+ "content": null, 
+ "creation": "2015-06-23 17:41:42.911635", 
+ "docstatus": 0, 
+ "doctype": "Page", 
+ "icon": "fa-truck", 
+ "modified": "2015-06-23 17:41:54.614932", 
+ "modified_by": "Administrator", 
+ "module": "das", 
+ "name": "dispatching-dashboar", 
+ "owner": "Administrator", 
+ "page_name": "Dispatching Dashboard", 
+ "roles": [], 
+ "script": null, 
+ "standard": "Yes", 
+ "style": null, 
+ "title": "Dispatching Dashboard "
+}
