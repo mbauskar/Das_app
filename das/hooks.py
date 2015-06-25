@@ -66,13 +66,11 @@ app_version = "0.0.1"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-#	}
-# }
+doc_events = {
+	"Delivery Note": {
+		"validate": "das.das_validations.delivery_note_validations"
+	}
+}
 
 # Scheduled Tasks
 # ---------------
@@ -107,3 +105,4 @@ app_version = "0.0.1"
 # 	"frappe.desk.doctype.event.event.get_events": "das.event.get_events"
 # }
 
+fixtures = ["Custom Field"]
