@@ -86,7 +86,7 @@ def get_payment_report_data(filters):
 def get_sales_order_fields_values(filters):
 	conditions = get_conditions(filters)
 	sales_orders = frappe.db.sql("""select name,grand_total from `tabSales Order`
-									where (transaction_date between %(start)s and %(end)s)
+									where docstatus=1 and (transaction_date between %(start)s and %(end)s)
 									{conditions}""".format(conditions=conditions), 
 									{
 										"start": filters.get("from"),
@@ -101,7 +101,7 @@ def get_sales_invoice_fields_values(sales_orders):
 
 	si_amts = frappe.db.sql("""select sii.sales_order,sum(si.grand_total),(sum(si.grand_total)-sum(si.outstanding_amount)), 
 							sii.batch_no from `tabSales Invoice` as si,`tabSales Invoice Item` as sii
-							where si.name=sii.parent and sii.sales_order in {so_names} 
+							where  si.docstatus=1 and si.name=sii.parent and sii.sales_order in {so_names} 
 							group by sii.sales_order""".format(so_names=so_names), as_list=True)
 
 	return si_amts
@@ -110,7 +110,7 @@ def get_technician_fields_values(so_names):
 	so_names = "('%s')" % "','".join(tuple(so_names))
 
 	tech_amts = frappe.db.sql("""select sales_order,sum(grand_total),(sum(grand_total)-sum(outstanding_amount)) from `tabPurchase Invoice`
-								 where sales_order in {so_names} group by sales_order""".format(so_names=so_names),
+								 where  docstatus=1 and sales_order in {so_names} group by sales_order""".format(so_names=so_names),
 								 as_list=True)
 
 	return tech_amts
@@ -120,15 +120,16 @@ def get_purchase_amount_values(so_names):
 	
 	so_names = "('%s')" % "','".join(tuple(so_names))
 	batch_nos = frappe.db.sql("""select sii.batch_no,sii.sales_order from `tabSales Invoice` as si,`tabSales Invoice Item` as sii
-							where si.name=sii.parent and sii.sales_order in {so_names} 
+							where  si.docstatus=1 and si.name=sii.parent and sii.sales_order in {so_names} 
 							group by sii.batch_no""".format(so_names=so_names), as_list=True)
 
 	str_mapping = ",".join(":".join(map(str,l)) for l in batch_nos)		#creating string for data mapping
 	
 	batch_names = "('%s')" % "','".join(tuple([bn[0] for bn in batch_nos if bn[0]]))
 
-	pr_amts = frappe.db.sql("""select sle.batch_no,sum(sle.valuation_rate) from `tabStock Ledger Entry` as sle where sle.voucher_type='Purchase Receipt'
-		and batch_no in {batch_names} group by sle.batch_no""".format(batch_names=batch_names),as_list=True)
+	pr_amts = frappe.db.sql("""select sle.batch_no,sum(sle.valuation_rate) from `tabStock Ledger Entry` as sle
+	 where sle.voucher_type='Purchase Receipt' and batch_no in {batch_names} 
+	 group by sle.batch_no""".format(batch_names=batch_names),as_list=True)
 	
 	for amt in pr_amts:
 		bn_key = str_mapping[str_mapping.index(amt[0]):].split(",")[0]
