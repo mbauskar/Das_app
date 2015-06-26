@@ -77,8 +77,6 @@ frappe.views.DispachOrderGantt = frappe.views.Gantt.extend({
 					if(mode)
 						gantt_scale = mode
 
-					console.log(gantt_scale)
-					
 					gantt_area.gantt({
 						source: get_gantt_source_dataset(r.message),
 						navigate: "scroll",
@@ -100,7 +98,6 @@ frappe.views.DispachOrderGantt = frappe.views.Gantt.extend({
 });
 
 set_fields = function(page){
-	console.log("set_fields");
 	this.page = page
 
 	this.page.set_secondary_action(__("Refresh"),
@@ -116,7 +113,7 @@ set_fields = function(page){
 	this.wrapper = $("<div></div>").appendTo(this.page.main);
 }
 
-make_gantt_chart = function(dataset){
+/*make_gantt_chart = function(dataset){
 	$("#dispach_order_gantt").gantt({
 		source: dataset,
 		navigate: "scroll",
@@ -125,14 +122,13 @@ make_gantt_chart = function(dataset){
 		maxScale: "hours",
 		itemsPerPage: 10,
 		onItemClick: function(data) {
-			console.log(data)
 			frappe.set_route('Form', "Delivery Note", data.name);
 		},
 		onAddClick: function(dt, rowId) {
 			newdoc("Delivery Note");
 		}
 	});
-}
+}*/
 
 get_gantt_source_dataset = function(orders){
 	me = this
