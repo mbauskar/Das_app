@@ -34,7 +34,7 @@ def get_payment_report_columns():
 		}
 	}
 """
-payment_report_data = {}
+# payment_report_data = {}
 
 def get_payment_report_data(filters):
 	"""
@@ -46,8 +46,29 @@ def get_payment_report_data(filters):
 		Paid : total amount paid to Technician
 		Purchased Product Amount : Amount PR
 	"""
-	sales_orders = get_sales_order_fields_values(filters)
 
+	payment_report_data = {}
+
+	so_names = get_sales_order_fields_values(filters)
+	set_sales_invoice_fields_values(so_names)
+	set_technician_fields_values(so_names)
+	# set_purchase_amount()
+	
+	return get_formatted_payment_report_data()
+
+def get_sales_order_fields_values(filters):
+	conditions = get_conditions(filters)
+	sales_orders = frappe.db.sql("""select name,grand_total from `tabSales Order`
+									where (transaction_date between %(start)s and %(end)s)
+									{conditions}""".format(conditions=conditions), 
+									{
+										"start": filters.get("from"),
+										"end": filters.get("to") if filters.get("to") else filters.get("start")
+									},
+									as_list=True,debug=1)
+
+	# creating structure to store the report data
+	# storing the sales invoice details
 	for sales_order in sales_orders:
 		payment_report_data.update({
 			sales_order[0]:{
@@ -55,73 +76,64 @@ def get_payment_report_data(filters):
 				"order_amount":sales_order[1]
 			}
 		})
-	# frappe.errprint(payment_report_data)
-	so_names = [sales_order[0] for sales_order in sales_orders]
-	
-	invoice_data = get_sales_invoice_fields_values(so_names)
-	invoices = [invoice[1] for invoice in invoice_data ]
-	# sum of all the invoice amount
-	journal_entries = get_journal_entries("Sales Invoice", invoices)
 
-	return [["SO-00001","100","100","100","100","100","100","100"]]
+	return [sales_order[0] for sales_order in sales_orders]
 
-def get_sales_order_fields_values(filters):
-	conditions = get_conditions(filters)
-
-	return frappe.db.sql("""select name,grand_total from `tabSales Order`
-		 where (transaction_date between %(start)s and %(end)s)
-		 {conditions}""".format(conditions=conditions), 
-		 {
-		 	"start": filters.get("from"),
-		 	"end": filters.get("to") if filters.get("to") else filters.get("start")
-		 },
-		 as_list=True)
-
-def get_sales_invoice_fields_values(sales_orders):
-	# get the sales invoice names
+def set_sales_invoice_fields_values(sales_orders):
 	so_names = "('%s')" % "','".join(tuple(sales_orders))
 
-	si_amts = frappe.db.sql("""select sii.sales_order,si.name,si.grand_total from `tabSales Invoice` as si,
-							`tabSales Invoice Item` as sii
+	si_amts = frappe.db.sql("""select sii.sales_order,sum(si.grand_total),(sum(si.grand_total)-sum(si.outstanding_amount)) 
+							from `tabSales Invoice` as si,`tabSales Invoice Item` as sii
 							where si.name=sii.parent and sii.sales_order in {so_names} 
-							group by si.name""".format(so_names=so_names), as_list=True)
-
-	# si_amts = frappe.db.sql("""select sii.sales_order,sum(si.grand_total) from `tabSales Invoice` as si,
-	# 						`tabSales Invoice Item` as sii
-	# 						where si.name=sii.parent and sii.sales_order in {so_names} 
-	# 						group by sii.sales_order""".format(so_names=so_names), as_list=True)
+							group by sii.sales_order""".format(so_names=so_names), as_list=True)
 
 	for si_amt in si_amts:
 		payment_report_data[si_amt[0]].update({
-			"invoice_amt":si_amt[1]
+			"invoice_amt":si_amt[1],
+			"invoice_payment":si_amt[2]
 		})
-		
-	return si_amts
 
-def get_journal_entries(doctype, names):
-	condition = ""
-	names = "('%s')" % "','".join(tuple(names))
+def set_technician_fields_values(so_names):
+	so_names = "('%s')" % "','".join(tuple(so_names))
 
-	if doctype == "Sales Invoice":
-		condition = "jea.against_invoice in {names}".format(names=names)
-	elif doctype == "Sales Order":
-		condition = "jea.againts_sales_order in {names}".format(names=names)
-	elif doctype == "Purchase Order":
-		condition = "jea.againts_purchase_order in {names}".format(names=names)
-	elif doctype == "Purchase Invoice":
-		condition = "jea.againts_voucher in {names}".format(names=names)
+	tech_amts = frappe.db.sql("""select sales_order,sum(grand_total),(sum(grand_total)-sum(outstanding_amount)) from `tabPurchase Invoice`
+								 where sales_order in {so_names} group by sales_order""".format(so_names=so_names),
+								 as_list=True)
 
-	journal_entries = frappe.db.sql("""select sum(je.total_credit) from `tabJournal Entry` as je,
-								`tabJournal Entry Account` as jea where je.name=jea.parent and
-								{condition}""".format(condition=condition), as_list=True, debug=1)
+	for tech_amt in tech_amts:
+		payment_report_data[tech_amt[0]].update({
+			"technician_payment":tech_amt[1],
+			"amt_paid":tech_amt[2]
+		})
 
-	frappe.errprint(journal_entries)
+def set_purchase_amount(so_names):
+	pass
+
+def get_formatted_payment_report_data():
+	report_data = []
+	if not payment_report_data:
+		return report_data
+	else:
+		data = []
+		for values in payment_report_data.values():
+			data.append(values.get("sales_order"))
+			data.append(values.get("order_amount"))
+			data.append(values.get("invoice_amt"))
+			data.append(values.get("invoice_payment"))
+			data.append(values.get("technician_payment"))
+			data.append(values.get("amt_paid"))
+			data.append(0)
+
+			report_data.append(data)
+			data = []
+
+	return report_data
 
 
 def get_conditions(filters):
 	conditions = []
 	if filters.get("sales_order"):
-		conditions.append("sales_order='%(sales_order)s'"%filters)
+		conditions.append("name='%(sales_order)s'"%filters)
 	if filters.get("technician"):
 		conditions.append("technician='%(technician)s'"%filters)
 

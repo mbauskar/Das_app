@@ -9,7 +9,7 @@ def get_dispach_orders(start, end, filters=None):
 	# conditions = build_match_conditions("Delivery Note")
 	# conditions = conditions and (" and " + conditions) or ""
 
-	conditions = "(start_date between '%s' and '%s' or end_date between '%s' and '%s')"%(start,end,start,end)
+	conditions = "docstatus<>2 and (start_date between '%s' and '%s' or end_date between '%s' and '%s')"%(start,end,start,end)
 
 	if filters:
 		filters = json.loads(filters)
@@ -17,11 +17,8 @@ def get_dispach_orders(start, end, filters=None):
 			if filters[key]:
 				conditions += " and " + key + ' = "' + filters[key].replace('"', '\"') + '"'
 
-		frappe.errprint("py")
-		frappe.errprint(conditions)
-
 	data = frappe.db.sql("""select name, technician, start_date, end_date, status from `tabDelivery Note`
-		where {conditions} order by technician asc""".format(conditions=conditions), as_dict=True,debug=1)
+		where {conditions} order by technician asc""".format(conditions=conditions), as_dict=True)
 
 	technicians = list(set([i.technician for i in data]))
 
