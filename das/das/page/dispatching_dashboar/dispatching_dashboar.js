@@ -45,6 +45,10 @@ frappe.views.DispachOrderGantt = frappe.views.Gantt.extend({
 		this.technician = this.page.add_field({fieldtype:"Link", label:"Technician",
 			fieldname:"technician", options:"Supplier", input_css: {"z-index": 3}});
 
+		this.technician = this.page.add_field({fieldtype:"Select", label:"Mode",
+			fieldname:"mode", options:[{"label": __("Days"), "value": "days"},
+			{"label": __("Hours"), "value": "hours"}], input_css: {"z-index": 3}});
+
 		this.add_filters();
 		this.wrapper = $("<div></div>").appendTo(this.page.main);
 
@@ -67,10 +71,18 @@ frappe.views.DispachOrderGantt = frappe.views.Gantt.extend({
 					$(me.wrapper).html('<p class="text-muted" style="padding: 15px;">' + __('Nothing to show for this selection') + '</p>');
 				} else {
 					var gantt_area = $('<div class="gantt">').appendTo(me.wrapper);
+
+					var mode = me.page.fields_dict.mode.get_parsed_value();
+					var gantt_scale = "hours";
+					if(mode)
+						gantt_scale = mode
+
+					console.log(gantt_scale)
+					
 					gantt_area.gantt({
 						source: get_gantt_source_dataset(r.message),
 						navigate: "scroll",
-						scale: "hours",
+						scale: gantt_scale,
 						minScale: "hours",
 						maxScale: "weeks",
 						itemsPerPage: 20,
