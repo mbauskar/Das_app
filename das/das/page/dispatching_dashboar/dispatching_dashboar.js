@@ -25,13 +25,10 @@ frappe.views.DispachOrderGantt = frappe.views.Gantt.extend({
 			this.refresh();
 	},
 	make_page: function(page,wrapper) {
-		// var module = locals.DocType["Delivery Note"].module,
-		// 	me = this;
 		var me = this;
 
 		this.page = page;
 		this.page.set_title(__("Dispatching Dashboard") + " - " + __("Gantt Chart"));
-		// frappe.breadcrumbs.add(module, "Delivery Note");
 
 		this.page.set_secondary_action(__("Refresh"),
 			function() { me.refresh(); }, "icon-refresh")
@@ -97,39 +94,6 @@ frappe.views.DispachOrderGantt = frappe.views.Gantt.extend({
 	}
 });
 
-set_fields = function(page){
-	this.page = page
-
-	this.page.set_secondary_action(__("Refresh"),
-		function() { me.refresh(); }, "icon-refresh")
-
-	this.page.add_field({fieldtype:"Date", label:"From",
-		fieldname:"start", "default": frappe.datetime.month_start(), input_css: {"z-index": 3}});
-
-	this.page.add_field({fieldtype:"Date", label:"To",
-		fieldname:"end", "default": frappe.datetime.month_end(), input_css: {"z-index": 3}});
-
-	this.add_filters();
-	this.wrapper = $("<div></div>").appendTo(this.page.main);
-}
-
-/*make_gantt_chart = function(dataset){
-	$("#dispach_order_gantt").gantt({
-		source: dataset,
-		navigate: "scroll",
-		scale: "hours",
-		minScale: "hours",
-		maxScale: "hours",
-		itemsPerPage: 10,
-		onItemClick: function(data) {
-			frappe.set_route('Form', "Delivery Note", data.name);
-		},
-		onAddClick: function(dt, rowId) {
-			newdoc("Delivery Note");
-		}
-	});
-}*/
-
 get_gantt_source_dataset = function(orders){
 	me = this
 	var result_set = []
@@ -163,25 +127,3 @@ get_values = function(me, values){
 
 	return result_set;
 }
-
-// get_dispach_orders_and_make_chart = function(filters){
-// 	/* 	
-// 		get the dispach order data set from delivery note
-// 		and create the dataset according to gantt chart format
-// 	*/
-// 	return frappe.call({
-// 		method: "das.das.page.dispatching_dashboar.dispatching_dashboar.get_dispach_orders",
-// 		args: {
-// 			"start":"2015-06-20 14:00:00",
-// 			"end":"2015-10-30 16:00:00",
-// 			"filters": filters
-// 		},
-// 		callback: function(r){
-// 			if(r.message){
-// 				data = r.message
-// 				source = get_gantt_source_dataset(r.message);
-// 				make_gantt_chart(source)
-// 			}
-// 		}
-// 	});
-// }
