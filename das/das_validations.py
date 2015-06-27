@@ -9,7 +9,7 @@ def delivery_note_validations(doc, method):
 	if start > end:
 		frappe.throw("End Date should be greater than Start Date")
 
-def validations_against_batch_nubmer(doc, method):
+def validations_against_batch_number(doc, method):
 	err_items = []
 	for item in doc.items:
 		if frappe.db.get_value("Item",item.item_code,"has_batch_no") == "Yes" and not item.batch_no:
