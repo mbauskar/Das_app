@@ -47,8 +47,7 @@ frappe.views.DispachOrderGantt = frappe.views.Gantt.extend({
 			}, input_css: {"z-index": 3}});
 
 		this.mode = this.page.add_field({fieldtype:"Select", label:"Mode",
-			fieldname:"mode", "default_value":"Hours", options:[{"label": __("Days"), "value": "days"},
-			{"label": __("Hours"), "value": "hours"}], input_css: {"z-index": 3}});
+			fieldname:"mode", default_value:"Hours", options:["Hours","Days"], input_css: {"z-index": 3}});
 
 		this.add_filters();
 		this.wrapper = $("<div></div>").appendTo(this.page.main);
@@ -76,7 +75,8 @@ frappe.views.DispachOrderGantt = frappe.views.Gantt.extend({
 					var mode = me.page.fields_dict.mode.get_parsed_value();
 					var gantt_scale = "hours";
 					if(mode)
-						gantt_scale = mode
+						// gantt_scale = mode
+						gantt_scale = mode == "Hours"?"hours":"days"
 
 					gantt_area.gantt({
 						source: get_gantt_source_dataset(r.message),
