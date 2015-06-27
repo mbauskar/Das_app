@@ -33,18 +33,21 @@ frappe.views.DispachOrderGantt = frappe.views.Gantt.extend({
 		this.page.set_secondary_action(__("Refresh"),
 			function() { me.refresh(); }, "icon-refresh")
 
-		this.start = this.page.add_field({fieldtype:"Datetime", label:"From",
-			fieldname:"start", "default": frappe.datetime.month_start(), input_css: {"z-index": 3}});
+		this.start = this.page.add_field({fieldtype:"Date", label:"From",
+			fieldname:"start", "default": frappe.datetime.get_today(), input_css: {"z-index": 3}});
 
-		this.end = this.page.add_field({fieldtype:"Datetime", label:"To",
-			fieldname:"end", "default": frappe.datetime.month_end(), input_css: {"z-index": 3}});
+		this.end = this.page.add_field({fieldtype:"Date", label:"To",
+			fieldname:"end", "default": frappe.datetime.get_today(), input_css: {"z-index": 3}});
 
 		this.technician = this.page.add_field({fieldtype:"Link", label:"Technician",
-			fieldname:"technician", options:"Supplier", input_css: {"z-index": 3}});
+			fieldname:"technician", options:"Supplier", get_query:{
+				filters:{
+					"supplier_type":"Technician"
+				}
+			}, input_css: {"z-index": 3}});
 
-		this.technician = this.page.add_field({fieldtype:"Select", label:"Mode",
-			fieldname:"mode", options:[{"label": __("Days"), "value": "days"},
-			{"label": __("Hours"), "value": "hours"}], input_css: {"z-index": 3}});
+		this.mode = this.page.add_field({fieldtype:"Select", label:"Mode",
+			fieldname:"mode", default_value:"Hours", options:["Hours","Days"], input_css: {"z-index": 3}});
 
 		this.add_filters();
 		this.wrapper = $("<div></div>").appendTo(this.page.main);
@@ -72,7 +75,8 @@ frappe.views.DispachOrderGantt = frappe.views.Gantt.extend({
 					var mode = me.page.fields_dict.mode.get_parsed_value();
 					var gantt_scale = "hours";
 					if(mode)
-						gantt_scale = mode
+						// gantt_scale = mode
+						gantt_scale = mode == "Hours"?"hours":"days"
 
 					gantt_area.gantt({
 						source: get_gantt_source_dataset(r.message),
