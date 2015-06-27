@@ -17,7 +17,7 @@ def get_dispach_orders(start, end, filters=None):
 			if filters[key]:
 				conditions += " and " + key + ' = "' + filters[key].replace('"', '\"') + '"'
 
-	data = frappe.db.sql("""select dn.name, dn.technician, dn.start_date, dn.end_date, dn.status from `tabDelivery Note` as dn,
+	data = frappe.db.sql("""select dn.name, dn.customer_name,dn.technician, dn.start_date, dn.end_date, dn.status from `tabDelivery Note` as dn,
 		`tabSupplier` as sup where sup.name=dn.technician and sup.supplier_type='Technician' and {conditions} order by technician asc
 		""".format(conditions=conditions), as_dict=True, debug=1)
 
@@ -42,7 +42,7 @@ def get_order_details(technician, orders):
 			
 			values.append({
 				"name": order.name,
-				"desc": "<div class='row'><div class='col-xs-6'>Delivery Note</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>Technician</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>Start Date</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>End Date</div><div class='col-xs-6'>%s</div></div></div>"%(order.name, order.technician, order.start_date, order.end_date),
+				"desc": "<div class='row'><div class='col-xs-6'>Delivery Note</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>Customer</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>Technician</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>Start Date</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>End Date</div><div class='col-xs-6'>%s</div></div>"%(order.name, order.customer_name,order.technician, order.start_date, order.end_date),
 				"from": '/Date(%s)/'%(str(start)),
 				"to": '/Date(%s)/'%(str(end)),
 				"status": order.status
