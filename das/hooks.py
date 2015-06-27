@@ -69,6 +69,9 @@ app_version = "0.0.1"
 doc_events = {
 	"Delivery Note": {
 		"validate": "das.das_validations.delivery_note_validations"
+	},
+	"Sales Invoice": {
+		"validate": "das.das_validations.validations_against_batch_number"
 	}
 }
 
