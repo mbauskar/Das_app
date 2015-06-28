@@ -14,12 +14,12 @@ def execute(filters=None):
 def get_payment_report_columns():
 	return [
 		_("Sales Order") + ":Link/Sales Order:100",
-		_("Order Amount") + "::100",
-		_("Invoice Amount") + "::100",
-		_("Invoice Payment") + "::150",
-		_("Technician Payment") + "::150",
-		_("Paid") + "::100",
-		_("Purchased Product Amount") + "::200"]
+		_("Order Amount") + ":Float/1:100",
+		_("Invoice Amount") + ":Float/1:100",
+		_("Invoice Payment") + ":Float/1:150",
+		_("Technician Payment") + ":Float/1:150",
+		_("Paid") + ":Float/1:100",
+		_("Purchased Product Amount") + ":Float/1:200"]
 
 """
 	payment_data = {
@@ -62,11 +62,8 @@ def get_payment_report_data(filters):
 
 	si_amts = get_sales_invoice_fields_values(so_names)
 
-	for si_amt in si_amts:
-		payment_report_data[si_amt[0]].update({
-			"invoice_amt":si_amt[1],
-			"invoice_payment":si_amt[2]
-		})
+	for key,value in si_amts.iteritems():
+		payment_report_data[key].update(value)
 
 	tech_amts = get_technician_fields_values(so_names)
 	for tech_amt in tech_amts:
@@ -97,14 +94,21 @@ def get_sales_order_fields_values(filters):
 	return sales_orders
 
 def get_sales_invoice_fields_values(sales_orders):
+	result = {so:{"invoice_amt":0,"invoice_payment":0} for so in sales_orders}
+
 	so_names = "('%s')" % "','".join(tuple(sales_orders))
+	si_amts = frappe.db.sql("""SELECT sii.sales_order,si.grand_total,(si.grand_total-si.outstanding_amount) FROM 
+		`tabSales Invoice` AS si JOIN `tabSales Invoice Item` AS sii ON sii.parent=si.name WHERE si.docstatus=1 
+		AND si.name=sii.parent AND sii.sales_order in {so_names} GROUP BY sii.parent""".format(so_names=so_names),
+		as_list=True)
 
-	si_amts = frappe.db.sql("""select sii.sales_order,sum(si.grand_total),(sum(si.grand_total)-sum(si.outstanding_amount)), 
-							sii.batch_no from `tabSales Invoice` as si,`tabSales Invoice Item` as sii
-							where  si.docstatus=1 and si.name=sii.parent and sii.sales_order in {so_names} 
-							group by sii.sales_order""".format(so_names=so_names), as_list=True)
+	for si_amt in si_amts:
+		result[si_amt[0]].update({
+			"invoice_amt": result[si_amt[0]].get("invoice_amt") + si_amt[1],
+			"invoice_payment":result[si_amt[0]].get("invoice_payment") + si_amt[2]
+		})
 
-	return si_amts
+	return result
 
 def get_technician_fields_values(so_names):
 	so_names = "('%s')" % "','".join(tuple(so_names))
@@ -119,23 +123,14 @@ def get_purchase_amount_values(so_names):
 	result = {so:0 for so in so_names}
 	
 	so_names = "('%s')" % "','".join(tuple(so_names))
-	batch_nos = frappe.db.sql("""select sii.batch_no,sii.sales_order from `tabSales Invoice` as si,`tabSales Invoice Item` as sii
-							where  si.docstatus=1 and si.name=sii.parent and sii.sales_order in {so_names} 
-							group by sii.batch_no""".format(so_names=so_names), as_list=True)
+	pr_amts = frappe.db.sql("""SELECT sii.sales_order,SUM(sle.valuation_rate * sii.qty),sle.item_code 
+		FROM `tabSales Invoice` AS si,`tabSales Invoice Item` AS sii, `tabStock Ledger Entry` AS sle 
+		WHERE sle.voucher_type='Purchase Receipt' AND sle.batch_no=sii.batch_no AND sle.item_code=sii.item_code 
+		AND si.docstatus=1 AND si.name=sii.parent AND sii.sales_order IN {so_names} GROUP BY sii.sales_order
+		""".format(so_names=so_names), as_list=True)
 
-	str_mapping = ",".join(":".join(map(str,l)) for l in batch_nos)		#creating string for data mapping
-	
-	batch_names = "('%s')" % "','".join(tuple([bn[0] for bn in batch_nos if bn[0]]))
-
-	pr_amts = frappe.db.sql("""select sle.batch_no,sum(sle.valuation_rate) from `tabStock Ledger Entry` as sle
-	 where sle.voucher_type='Purchase Receipt' and batch_no in {batch_names} 
-	 group by sle.batch_no""".format(batch_names=batch_names),as_list=True)
-	
 	for amt in pr_amts:
-		bn_key = str_mapping[str_mapping.index(amt[0]):].split(",")[0]
-		key = bn_key.split(":")[1]
-
-		result[key] = result[key] + amt[1] if result[key] else amt[1]
+		result[amt[0]] = amt[1]
 
 	return result
 
@@ -146,13 +141,15 @@ def get_formatted_payment_report_data(payment_report_data):
 	else:
 		data = []
 		for values in payment_report_data.values():
-			data.append(values.get("sales_order") if values.get("sales_order") else 0)
-			data.append(values.get("order_amount") if values.get("order_amount") else 0)
-			data.append(values.get("invoice_amt") if values.get("invoice_amt") else 0)
-			data.append(values.get("invoice_payment") if values.get("invoice_payment") else 0)
-			data.append(values.get("technician_payment") if values.get("technician_payment") else 0)
-			data.append(values.get("amt_paid") if values.get("amt_paid") else 0)
-			data.append(values.get("purcese_product_amt") if values.get("purcese_product_amt") else 0)
+		
+			data.append(values.get("sales_order") if values.get("sales_order") else 0.0)
+			data.append(values.get("order_amount") if values.get("order_amount") else 0.0)
+			data.append(values.get("invoice_amt") if values.get("invoice_amt") else 0.0)
+			data.append(values.get("invoice_payment") if values.get("invoice_payment") else 0.0)
+			data.append(values.get("technician_payment") if values.get("technician_payment") else 0.0)
+			data.append(values.get("amt_paid") if values.get("amt_paid") else 0.0)
+			data.append(values.get("purcese_product_amt") if values.get("purcese_product_amt") else 0.0)
+			# data.append("to be fetch")
 
 			report_data.append(data)
 			data = []
