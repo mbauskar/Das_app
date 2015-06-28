@@ -62,11 +62,8 @@ def get_payment_report_data(filters):
 
 	si_amts = get_sales_invoice_fields_values(so_names)
 
-	for si_amt in si_amts:
-		payment_report_data[si_amt[0]].update({
-			"invoice_amt":si_amt[1],
-			"invoice_payment":si_amt[2]
-		})
+	for key,value in si_amts.iteritems():
+		payment_report_data[key].update(value)
 
 	tech_amts = get_technician_fields_values(so_names)
 	for tech_amt in tech_amts:
@@ -97,14 +94,21 @@ def get_sales_order_fields_values(filters):
 	return sales_orders
 
 def get_sales_invoice_fields_values(sales_orders):
+	result = {so:{"invoice_amt":0,"invoice_payment":0} for so in sales_orders}
+
 	so_names = "('%s')" % "','".join(tuple(sales_orders))
+	si_amts = frappe.db.sql("""SELECT sii.sales_order,si.grand_total,(si.grand_total-si.outstanding_amount) FROM 
+		`tabSales Invoice` AS si JOIN `tabSales Invoice Item` AS sii ON sii.parent=si.name WHERE si.docstatus=1 
+		AND si.name=sii.parent AND sii.sales_order in {so_names} GROUP BY sii.parent""".format(so_names=so_names),
+		as_list=True)
 
-	si_amts = frappe.db.sql("""select sii.sales_order,sum(si.grand_total),(sum(si.grand_total)-sum(si.outstanding_amount)), 
-							sii.batch_no from `tabSales Invoice` as si,`tabSales Invoice Item` as sii
-							where  si.docstatus=1 and si.name=sii.parent and sii.sales_order in {so_names} 
-							group by sii.sales_order""".format(so_names=so_names), as_list=True)
+	for si_amt in si_amts:
+		result[si_amt[0]].update({
+			"invoice_amt": result[si_amt[0]].get("invoice_amt") + si_amt[1],
+			"invoice_payment":result[si_amt[0]].get("invoice_payment") + si_amt[2]
+		})
 
-	return si_amts
+	return result
 
 def get_technician_fields_values(so_names):
 	so_names = "('%s')" % "','".join(tuple(so_names))
