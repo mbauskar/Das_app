@@ -50,7 +50,7 @@ frappe.views.DispachOrderGantt = frappe.views.Gantt.extend({
 			fieldname:"mode", default_value:"Hours", options:["Hours","Days"], input_css: {"z-index": 3}});
 
 		this.add_filters();
-		this.wrapper = $("<div style='position: relative;z-index:-1;'></div>").appendTo(this.page.main);
+		this.wrapper = $("<div style='position: relative;z-index:1;'></div>").appendTo(this.page.main);
 
 	},
 	refresh: function() {
