@@ -37,7 +37,7 @@ frappe.views.DispachOrderGantt = frappe.views.Gantt.extend({
 			fieldname:"start", "default": frappe.datetime.get_today(), input_css: {"z-index": 3}});
 
 		this.end = this.page.add_field({fieldtype:"Date", label:"To",
-			fieldname:"end", "default": frappe.datetime.get_today(), input_css: {"z-index": 3}});
+			fieldname:"end", "default": frappe.datetime.add_days(frappe.datetime.get_today(),14), input_css: {"z-index": 3}});
 
 		this.technician = this.page.add_field({fieldtype:"Link", label:"Technician",
 			fieldname:"technician", options:"Supplier", get_query:{
@@ -50,7 +50,7 @@ frappe.views.DispachOrderGantt = frappe.views.Gantt.extend({
 			fieldname:"mode", default_value:"Hours", options:["Hours","Days"], input_css: {"z-index": 3}});
 
 		this.add_filters();
-		this.wrapper = $("<div></div>").appendTo(this.page.main);
+		this.wrapper = $("<div style='position: relative;z-index:-1;'></div>").appendTo(this.page.main);
 
 	},
 	refresh: function() {
