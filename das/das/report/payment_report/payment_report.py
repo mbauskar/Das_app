@@ -13,13 +13,14 @@ def execute(filters=None):
 
 def get_payment_report_columns():
 	return [
-		_("Sales Order") + ":Link/Sales Order:100",
-		_("Order Amount") + ":Float/1:100",
-		_("Invoice Amount") + ":Float/1:100",
-		_("Invoice Payment") + ":Float/1:150",
-		_("Technician Payment") + ":Float/1:150",
-		_("Paid") + ":Float/1:100",
-		_("Purchased Product Amount") + ":Float/1:200"]
+		_("ID") + ":Link/Sales Order:100",
+		_("Customer") + ":Link/Customer:100",
+		_("Sales Order Total") + ":Float/2:150",
+		_("Amount Billed") + ":Float/2:100",
+		_("Amount Received") + ":Float/2:150",
+		_("Services Billed") + ":Float/2:150",
+		_("Services Paid") + ":Float/2:100",
+		_("Product Billed") + ":Float/2:200"]
 
 """
 	payment_data = {
@@ -55,7 +56,8 @@ def get_payment_report_data(filters):
 		payment_report_data.update({
 			sales_order[0]:{
 				"sales_order":sales_order[0],
-				"order_amount":sales_order[1]
+				"customer_name":sales_order[1],
+				"order_amount":sales_order[2]
 			}
 		})
 	so_names = [sales_order[0] for sales_order in sales_orders]
@@ -81,7 +83,7 @@ def get_payment_report_data(filters):
 
 def get_sales_order_fields_values(filters):
 	conditions = get_conditions(filters)
-	sales_orders = frappe.db.sql("""select name,grand_total from `tabSales Order`
+	sales_orders = frappe.db.sql("""select name,customer_name,grand_total from `tabSales Order`
 									where docstatus=1 and (transaction_date between %(start)s and %(end)s)
 									{conditions}""".format(conditions=conditions), 
 									{
@@ -142,6 +144,7 @@ def get_formatted_payment_report_data(payment_report_data):
 		for values in payment_report_data.values():
 		
 			data.append(values.get("sales_order") if values.get("sales_order") else 0.0)
+			data.append(values.get("customer_name") if values.get("customer_name") else "")
 			data.append(values.get("order_amount") if values.get("order_amount") else 0.0)
 			data.append(values.get("invoice_amt") if values.get("invoice_amt") else 0.0)
 			data.append(values.get("invoice_payment") if values.get("invoice_payment") else 0.0)
