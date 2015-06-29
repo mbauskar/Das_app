@@ -61,7 +61,6 @@ def get_payment_report_data(filters):
 	so_names = [sales_order[0] for sales_order in sales_orders]
 
 	si_amts = get_sales_invoice_fields_values(so_names)
-
 	for key,value in si_amts.iteritems():
 		payment_report_data[key].update(value)
 
