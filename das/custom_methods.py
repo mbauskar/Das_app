@@ -36,7 +36,7 @@ def make_purchase_invoice(source_name, target_doc=None):
 
 @frappe.whitelist()
 def is_pi_already_exsits(sales_order):
-	invoice = frappe.db.sql("""select name from `tabPurchase Invoice` where sales_order='%s'"""%(sales_order))
+	invoice = frappe.db.sql("""select name from `tabPurchase Invoice` where docstatus in (0,1) and sales_order='%s' and outstanding_amount=0.0"""%(sales_order))
 	if not invoice:
 		return "no invoice"
 	else:
