@@ -124,7 +124,7 @@ def get_purchase_amount_values(so_names):
 	result = {so:0 for so in so_names}
 	
 	so_names = "('%s')" % "','".join(tuple(so_names))
-	pr_amts = frappe.db.sql("""SELECT sii.sales_order,SUM(sle.valuation_rate * sii.qty),sle.item_code 
+	pr_amts = frappe.db.sql("""SELECT sii.sales_order,SUM(sle.incoming_rate * sii.qty),sle.item_code 
 		FROM `tabSales Invoice` AS si,`tabSales Invoice Item` AS sii, `tabStock Ledger Entry` AS sle 
 		WHERE sle.voucher_type='Purchase Receipt' AND sle.batch_no=sii.batch_no AND sle.item_code=sii.item_code 
 		AND si.docstatus=1 AND si.name=sii.parent AND sii.sales_order IN {so_names} GROUP BY sii.sales_order
