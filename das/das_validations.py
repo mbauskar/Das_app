@@ -6,7 +6,7 @@ def delivery_note_validations(doc, method):
 	start = dt.strptime(doc.start_date, "%Y-%m-%d %H:%M:%S")
 	end  = dt.strptime(doc.end_date, "%Y-%m-%d %H:%M:%S")
 
-	tech_details = is_technician_timeslot_free(start, end, doc.technician)
+	tech_details = is_technician_timeslot_free(doc.name, start, end, doc.technician)
 
 	if tech_details:
 		frappe.throw("%s is already assigned for other delivery note between given Start Date & End Date"%(doc.technician))
@@ -15,10 +15,11 @@ def delivery_note_validations(doc, method):
 	elif start == end:
 		frappe.throw("End Date can not be same as Start Date")
 
-def is_technician_timeslot_free(_from, _to, technician):
-	return frappe.db.sql("""SELECT name FROM `tabDelivery Note` WHERE technician='%s' AND docstatus<>2 AND 
-		(start_date between '%s' AND '%s' OR end_date between '%s' AND '%s')"""%(technician,_from,_to,_from,_to),
-		as_dict=True, debug=1)
+def is_technician_timeslot_free(dn, _from, _to, technician):
+	return frappe.db.sql("""SELECT name FROM `tabDelivery Note` WHERE name<>'%s' AND technician='%s' AND docstatus=1 AND 
+		(date_format(start_date,"%%Y-%%m-%%d %%H:%%M:%%S") between '%s' AND '%s' OR date_format(end_date,"%%Y-%%m-%%d %%H:%%M:%%S") 
+		between '%s' AND '%s')"""%(dn,technician,_from,_to,_from,_to),
+		as_dict=True)
 
 def validations_against_batch_number(doc, method):
 	err_items = []
