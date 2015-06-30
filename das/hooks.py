@@ -72,6 +72,9 @@ doc_events = {
 	},
 	"Sales Invoice": {
 		"validate": "das.das_validations.validations_against_batch_number"
+	},
+	"Purchase Invoice": {
+		"validate": "das.das_validations.validations_against_supplier"
 	}
 }
 
