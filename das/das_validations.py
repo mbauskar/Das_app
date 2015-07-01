@@ -10,7 +10,7 @@ def delivery_note_validations(doc, method):
 
 	if tech_details:
 		frappe.throw("%s is already assigned for other delivery note between given Start Date & End Date"%(doc.technician))
-	
+
 	# is_valid_delivery_date(doc)
 
 	if start > end:
@@ -19,9 +19,8 @@ def delivery_note_validations(doc, method):
 		frappe.throw("End Date can not be same as Start Date")
 
 def is_technician_timeslot_free(dn, _from, _to, technician):
-	return frappe.db.sql("""SELECT name FROM `tabDelivery Note` WHERE name<>'%s' AND technician='%s' AND docstatus=1 AND 
-		(date_format(start_date,"%%Y-%%m-%%d %%H:%%M:%%S") between '%s' AND '%s' OR date_format(end_date,"%%Y-%%m-%%d %%H:%%M:%%S") 
-		between '%s' AND '%s')"""%(dn,technician,_from,_to,_from,_to),
+	return frappe.db.sql("""SELECT name FROM `tabDelivery Note` WHERE name<>'%s' AND technician='%s' AND docstatus=1 AND
+		(start_date between '%s' AND '%s' OR end_date between '%s' AND '%s')"""%(dn,technician,_from,_to,_from,_to),
 		as_dict=True)
 
 def is_valid_delivery_date(doc):
