@@ -6,12 +6,12 @@ def delivery_note_validations(doc, method):
 	start = dt.strptime(doc.start_date, "%Y-%m-%d %H:%M:%S")
 	end  = dt.strptime(doc.end_date, "%Y-%m-%d %H:%M:%S")
 
+	# is_valid_delivery_date(doc)
+
 	tech_details = is_technician_timeslot_free(doc.name, start, end, doc.technician)
 
 	if tech_details:
 		frappe.throw("%s is already assigned for other delivery note between given Start Date & End Date"%(doc.technician))
-
-	# is_valid_delivery_date(doc)
 
 	if start > end:
 		frappe.throw("End Date should be greater than Start Date")
@@ -30,7 +30,11 @@ def is_valid_delivery_date(doc):
 	# 	delivery_date = frappe.db.get_value("Sales Order",sales_order,"delivery_date")
 	# 	if delivery_date > dt.strptime(doc.posting_date, "%Y-%m-%d").date():
 	# 		frappe.throw("Posting Date can not be less than Sales Order's Delivery Date,\n Please check Sales Order Delivery Date")
-	pass
+	delivery_date = dt.strptime(doc.posting_date,"%Y-%m-%d")
+	start_date = dt.strptime(doc.start_date, "%Y-%m-%d %H:%M:%S")
+	if delivery_date.date() != start_date.date():
+		frappe.throw("Delivery Date and Start Date should be same")
+	# pass
 
 def validations_against_batch_number(doc, method):
 	err_items = []
