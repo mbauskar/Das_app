@@ -19,8 +19,12 @@ def delivery_note_validations(doc, method):
 		frappe.throw("End Date can not be same as Start Date")
 
 def is_technician_timeslot_free(dn, _from, _to, technician):
+	# return frappe.db.sql("""SELECT name FROM `tabDelivery Note` WHERE name<>'%s' AND technician='%s' AND docstatus<>2 AND
+	# 	(start_date between '%s' AND '%s' OR end_date between '%s' AND '%s')"""%(dn,technician,_from,_to,_from,_to),
+	# 	as_dict=True,debug=1)
+
 	return frappe.db.sql("""SELECT name FROM `tabDelivery Note` WHERE name<>'%s' AND technician='%s' AND docstatus<>2 AND
-		(start_date between '%s' AND '%s' OR end_date between '%s' AND '%s')"""%(dn,technician,_from,_to,_from,_to),
+		('%s' between start_date AND end_date OR '%s' between start_date AND end_date)"""%(dn,technician,_from,_to),
 		as_dict=True)
 
 def is_valid_delivery_date(doc):
