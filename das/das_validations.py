@@ -23,7 +23,7 @@ def is_technician_timeslot_free(dn, _from, _to, technician):
 		OR ('%s' between start_date AND end_date)
 		OR (start_date between '%s' AND '%s')
 		OR (end_date between '%s' AND '%s'))"""%(dn,technician,_from,_to,_from,_to,_from,_to),
-		as_dict=True,debug=1)
+		as_dict=True)
 
 def is_valid_delivery_date(doc):
 	delivery_date = dt.strptime(doc.posting_date,"%Y-%m-%d")
