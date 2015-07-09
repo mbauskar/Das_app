@@ -148,6 +148,7 @@
   }, 
   {
    "allow_on_submit": 0, 
+   "default": "0.0", 
    "fieldname": "pi_amt", 
    "fieldtype": "Float", 
    "hidden": 0, 
@@ -210,7 +211,7 @@
  "is_submittable": 0, 
  "issingle": 0, 
  "istable": 0, 
- "modified": "2015-07-09 21:15:49.606273", 
+ "modified": "2015-07-10 00:28:57.398356", 
  "modified_by": "Administrator", 
  "module": "das", 
  "name": "Payment Information", 
