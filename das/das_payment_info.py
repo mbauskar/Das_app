@@ -9,7 +9,10 @@ def on_sales_order_submit(doc,method):
     payment = frappe.new_doc("Payment Information")
 
     payment.sales_order = doc.name
-    payment.so_amount = doc.grand_total
+    payment.so_amt = doc.grand_total
+    payment.transaction_date = doc.transaction_date
+    payment.technician = doc.technician
+    payment.customer = doc.customer
 
     payment.save(ignore_permissions=True)
 
@@ -20,15 +23,15 @@ def on_sales_order_cancel(doc,method):
         2: remove delivery note details child table details
         3: delete doc
     """
-    payment = get_payment_information_doc(sales_order)
+    payment = get_payment_information_doc(doc.name)
     if payment:
-        [payment.remove(row) for row in si_details]
-        [payment.remove(row) for row in dn_details]
+        [payment.remove(row) for row in payment.si_details]
+        [payment.remove(row) for row in payment.dn_details]
         # deleting the doc
         frappe.delete_doc("Payment Information", payment.name)
 
 def get_payment_information_doc(sales_order):
-    payment_doc_name = frappe.db.get_value("Payment Information", {"sales_order":doc.sales_order}, "name")
+    payment_doc_name = frappe.db.get_value("Payment Information", {"sales_order":sales_order}, "name")
     if payment_doc_name:
         return frappe.get_doc("Payment Information", payment_doc_name)
     else:
@@ -80,7 +83,7 @@ def on_sales_invoice_submit(doc, method):
         if payment:
             # creating child table for si_details
             si_detail = payment.append('si_details', {})
-            si_detail.sales_invoice = doc.grand_total
+            si_detail.sales_invoice = doc.name
             si_detail.si_amt = doc.grand_total
             # if advance amount is paid then set paid
             si_detail.paid = doc.grand_total - doc.outstanding_amount
@@ -93,29 +96,32 @@ def on_sales_invoice_cancel(doc, method):
         1: remove respective sales invoice details row
     """
     sales_orders = get_sales_orders_from_sales_invoice([doc.name])
-
     for sales_order in sales_orders:
-        payment = get_payment_information_doc(doc.sales_order)
+        payment = get_payment_information_doc(sales_order)
         if payment:
-            for si_detail_row in si_details:
+            for si_detail_row in payment.si_details:
                 if si_detail_row.sales_invoice == doc.name:
                     payment.remove(si_detail_row)
+            payment.save(ignore_permissions=True)
 
 def get_sales_orders_from_sales_invoice(sales_invoices):
     condition = "('%s')" % "','".join(tuple(sales_invoices))
-    orders = frappe.db.sql("""SELECT DISTINCT sales_order FROM `tabSales Invoice Item` WHERE docstatus=1 AND parent IN %s"""%(condition),
+    orders = frappe.db.sql("""SELECT DISTINCT sales_order FROM `tabSales Invoice Item` WHERE parent IN %s"""%(condition),
         as_list=1)
     return [order[0] for order in orders]
 
 def get_sales_orders_from_delivery_note(delivery_note):
     sales_orders = []
-    orders = frappe.db.sql("""SELECT DISTINCT against_sales_order FROM `tabDelivery Note Item` WHERE docstatus=1 AND parent='%s'"""%(delivery_note),
+    orders = frappe.db.sql("""SELECT against_sales_order FROM `tabDelivery Note Item` WHERE parent='%s' GROUP BY against_sales_order"""%(delivery_note),
         as_list=1)
-    invoices = frappe.db.sql("""SELECT DISTINCT against_sales_invoice FROM `tabDelivery Note Item` WHERE docstatus=1 AND parent='%s'"""%(delivery_note),
+    invoices = frappe.db.sql("""SELECT DISTINCT against_sales_invoice FROM `tabDelivery Note Item` WHERE parent='%s'"""%(delivery_note),
         as_list=1)
-    sales_order.extend([so[0] for so in orders])
-    orders = get_sales_orders_from_sales_invoice([inv for inv[0] in invoices])
+
     sales_orders.extend([so[0] for so in orders])
+    orders = get_sales_orders_from_sales_invoice([inv[0] for inv in invoices])
+    sales_orders.extend([so for so in orders])
+    # removing duplicates and returning list of sales order
+    return list(set(sales_orders))
 
 def on_delivery_note_submit(doc, method):
     """
@@ -127,26 +133,31 @@ def on_delivery_note_submit(doc, method):
     """
     sales_orders = get_sales_orders_from_delivery_note(doc.name)
 
-    payment = get_payment_information_doc(doc.sales_order)
-    if payment:
-        for dn_item in items:
-            dn_detail_row = payment.append('dn_details', {})
-            dn_detail_row.delivery_note = doc.name
-            dn_detail_row.qty = dn_item.qty
-            dn_detail_row.batch_number = item.batch_no
+    for sales_order in sales_orders:
+        payment = get_payment_information_doc(sales_order)
+        if payment:
+            for dn_item in doc.items:
+                dn_detail_row = payment.append('dn_details', {})
+                dn_detail_row.delivery_note = doc.name
+                dn_detail_row.qty = dn_item.qty
+                dn_detail_row.batch_number = dn_item.batch_no
 
-            # get the incoming_rate from stock ledger entry
-            dn_detail_row.incoming_rate = get_incoming_rate_from_batch(item.batch_no)
-            dn_detail_row.total_amount = dn_detail_row.incoming_rate * item.qty
+                # get the incoming_rate from stock ledger entry
+                dn_detail_row.incoming_rate = get_incoming_rate_from_batch(dn_item.batch_no)
+                dn_detail_row.total_amount = dn_detail_row.incoming_rate * dn_item.qty
 
-        payment.save(ignore_permissions=True)
+            payment.save(ignore_permissions=True)
 
 def get_incoming_rate_from_batch(batch_no):
     """
         Get the incoming rate rate from lated stock ledger entry
         voucher_type and voucher_no ??
     """
-    frappe.db.sql("""SELECT incoming_rate FROM `tabStock Ledger Entry` WHERE batch_no='%s' ORDER BY posting_date DESC LIMIT 1"""%(batch_no), as_list=1)
+    rate = frappe.db.sql("""SELECT incoming_rate FROM `tabStock Ledger Entry` WHERE batch_no='%s' AND voucher_type='Purchase Receipt' ORDER BY posting_date DESC,posting_time DESC LIMIT 1"""%(batch_no), as_list=1)
+    if rate:
+        return rate[0][0]
+    else:
+        return 0.0
 
 def on_delivery_note_cancel(doc, method):
     """
@@ -154,31 +165,33 @@ def on_delivery_note_cancel(doc, method):
         0: get the payment information doc
         1: remove all the rows with delivery_note = doc.name
     """
-    payment = get_payment_information_doc(doc.sales_order)
-    if payment:
-        dn_to_remove = []
-        for dn_detail_row in dn_details:
-            if dn_detail_row.delivery_note == doc.name:
-                dn_to_remove.append(dn_detail_row)
-        # remove all the rows whose delivery note value is doc.name
-        [payment.remove(dn_item) for dn_item in dn_detils]
+    sales_orders = get_sales_orders_from_delivery_note(doc.name)
+
+    for sales_order in sales_orders:
+        payment = get_payment_information_doc(sales_order)
+        if payment:
+            for dn_detail_row in payment.dn_details:
+                # remove DN entries
+                if dn_detail_row.delivery_note == doc.name:
+                    payment.remove(dn_detail_row)
+            payment.save(ignore_permissions=True)
 
 def get_doctype_name_from_je(doc):
     result = {}
 
     for je_detail in doc.accounts:
         if je_detail.against_invoice:
-            result.update({
+            return {
                 "against_doctype":"Sales Invoice",
                 "docname":je_detail.against_invoice
-            })
-        elif je_detail.against_purchase_invoice:
-            result.update({
-                "against_doctype":"Purchase Invoice"
+            }
+        elif je_detail.against_voucher:
+            return {
+                "against_doctype":"Purchase Invoice",
                 "docname":je_detail.against_voucher
-            })
+            }
         else:
-            result = {}
+            return {}
     return result
 
 def on_journal_entry_submit(doc, method):
@@ -197,11 +210,11 @@ def on_journal_entry_submit(doc, method):
         sales_orders = get_sales_orders_from_sales_invoice([info.get("docname")]) if info.get("against_doctype") == "Sales Invoice" else [frappe.db.get_value("Purchase Invoice",info.get("docname"),"sales_order")]
         for sales_order in sales_orders:
             payment = get_payment_information_doc(sales_order)
-            if info.get("doctype") == "Purchase Invoice":
+            if info.get("against_doctype") == "Purchase Invoice":
                 payment.pi_paid += doc.total_debit
-            elif info.get("doctype") == "Sales Invoice":
+            elif info.get("against_doctype") == "Sales Invoice":
                 # find si detail row and update the paid
-                for si_detail_row in si_detail:
+                for si_detail_row in payment.si_details:
                     si_detail_row.paid += doc.total_debit if si_detail_row.sales_invoice == info.get("docname") else 0
 
             payment.save(ignore_permissions=True)
@@ -221,11 +234,11 @@ def on_journal_entry_cancel(doc, method):
         sales_orders = get_sales_orders_from_sales_invoice([info.get("docname")]) if info.get("against_doctype") == "Sales Invoice" else [frappe.db.get_value("Purchase Invoice",info.get("docname"),"sales_order")]
         for sales_order in sales_orders:
             payment = get_payment_information_doc(sales_order)
-            if info.get("doctype") == "Purchase Invoice":
+            if info.get("against_doctype") == "Purchase Invoice":
                 payment.pi_paid -= doc.total_debit
-            elif info.get("doctype") == "Sales Invoice":
+            elif info.get("against_doctype") == "Sales Invoice":
                 # find si detail row and update the paid
-                for si_detail_row in si_detail:
+                for si_detail_row in payment.si_details:
                     si_detail_row.paid -= doc.total_debit if si_detail_row.sales_invoice == info.get("docname") else 0
 
             payment.save(ignore_permissions=True)

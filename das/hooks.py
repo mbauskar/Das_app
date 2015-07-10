@@ -73,7 +73,7 @@ doc_events = {
 		"on_cancel": "das.das_payment_info.on_delivery_note_cancel"
 	},
 	"Sales Invoice": {
-		"validate": "das.das_validations.validations_against_batch_number",
+		# "validate": "das.das_validations.validations_against_batch_number",
 		"on_submit": "das.das_payment_info.on_sales_invoice_submit",
 		"on_cancel": "das.das_payment_info.on_sales_invoice_cancel"
 	},
@@ -84,13 +84,13 @@ doc_events = {
 	},
 	"Sales Order": {
 		# "validate": "das.das_validations.delivery_note_validations"
-		"on_submit": "das.das_payment_info.on_sales_order_cancel",
+		"on_submit": "das.das_payment_info.on_sales_order_submit",
 		"on_cancel": "das.das_payment_info.on_sales_order_cancel"
 	},
 	"Journal Entry": {
 		# "validate": "das.das_validations.delivery_note_validations"
-		"on_submit": "das.das_payment_info.on_journal_entry_cancel",
-		"on_cancel": "das.das_payment_info.on_on_journal_entry_cancel"
+		"on_submit": "das.das_payment_info.on_journal_entry_submit",
+		"on_cancel": "das.das_payment_info.on_journal_entry_cancel"
 	},
 }
 
