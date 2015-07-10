@@ -25,6 +25,7 @@ def get_data():
 					"type": "report",
 					"is_query_report": True,
 					"name": "Payment Report",
+					"description": _("Payment summary against Sales Orders"),
 					"doctype": "Sales Order"
 				},
 			]
