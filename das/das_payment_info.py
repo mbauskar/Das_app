@@ -105,23 +105,28 @@ def on_sales_invoice_cancel(doc, method):
             payment.save(ignore_permissions=True)
 
 def get_sales_orders_from_sales_invoice(sales_invoices):
-    condition = "('%s')" % "','".join(tuple(sales_invoices))
-    orders = frappe.db.sql("""SELECT DISTINCT sales_order FROM `tabSales Invoice Item` WHERE parent IN %s"""%(condition),
-        as_list=1)
-    return [order[0] for order in orders]
+    if not sales_invoices:
+        return []
+    else:
+        condition = "('%s')" % "','".join(tuple(sales_invoices))
+        orders = frappe.db.sql("""SELECT DISTINCT sales_order FROM `tabSales Invoice Item` WHERE parent IN %s"""%(condition),
+            as_list=1)
+        return [order[0] for order in orders]
 
 def get_sales_orders_from_delivery_note(delivery_note):
-    sales_orders = []
-    orders = frappe.db.sql("""SELECT against_sales_order FROM `tabDelivery Note Item` WHERE parent='%s' GROUP BY against_sales_order"""%(delivery_note),
-        as_list=1)
-    invoices = frappe.db.sql("""SELECT DISTINCT against_sales_invoice FROM `tabDelivery Note Item` WHERE parent='%s'"""%(delivery_note),
-        as_list=1)
-
-    sales_orders.extend([so[0] for so in orders])
-    orders = get_sales_orders_from_sales_invoice([inv[0] for inv in invoices])
-    sales_orders.extend([so for so in orders])
-    # removing duplicates and returning list of sales order
-    return list(set(sales_orders))
+    if not delivery_note:
+        return []
+    else:
+        sales_orders = []
+        orders = frappe.db.sql("""SELECT DISTINCT against_sales_order FROM `tabDelivery Note Item` WHERE parent='%s'
+            AND against_sales_order IS NOT NULL"""%(delivery_note),as_list=1)
+        invoices = frappe.db.sql("""SELECT DISTINCT against_sales_invoice FROM `tabDelivery Note Item` WHERE parent='%s' and
+            against_sales_invoice IS NOT NULL"""%(delivery_note),as_list=1)
+        sales_orders.extend([so[0] for so in orders])
+        orders = get_sales_orders_from_sales_invoice([inv[0] for inv in invoices if not inv])
+        sales_orders.extend([so for so in orders])
+        # removing duplicates and returning list of sales order
+        return list(set(sales_orders))
 
 def on_delivery_note_submit(doc, method):
     """
