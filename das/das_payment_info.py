@@ -84,6 +84,9 @@ def on_sales_invoice_submit(doc, method):
             # creating child table for si_details
             si_detail = payment.append('si_details', {})
             si_detail.sales_invoice = doc.name
+            si_detail.parent = doc.name
+            si_detail.parentfield = "si_details"
+            si_detail.parenttype = "Payment Information"
             si_detail.si_amt = doc.grand_total
             # if advance amount is paid then set paid
             si_detail.paid = doc.grand_total - doc.outstanding_amount
@@ -99,9 +102,14 @@ def on_sales_invoice_cancel(doc, method):
     for sales_order in sales_orders:
         payment = get_payment_information_doc(sales_order)
         if payment:
+            to_remove = []
             for si_detail_row in payment.si_details:
                 if si_detail_row.sales_invoice == doc.name:
-                    payment.remove(si_detail_row)
+                    to_remove.append(si_detail_row)
+
+            if to_remove:
+                [payment.remove(si) for si in to_remove]
+
             payment.save(ignore_permissions=True)
 
 def get_sales_orders_from_sales_invoice(sales_invoices):
@@ -143,6 +151,9 @@ def on_delivery_note_submit(doc, method):
         if payment:
             for dn_item in doc.items:
                 dn_detail_row = payment.append('dn_details', {})
+                dn_detail_row.parent = payment.name
+                dn_detail_row.parentfield = "dn_details"
+                dn_detail_row.parenttype = "Payment Information"
                 dn_detail_row.delivery_note = doc.name
                 dn_detail_row.qty = dn_item.qty
                 dn_detail_row.batch_number = dn_item.batch_no
@@ -175,10 +186,14 @@ def on_delivery_note_cancel(doc, method):
     for sales_order in sales_orders:
         payment = get_payment_information_doc(sales_order)
         if payment:
-            for dn_detail_row in payment.dn_details:
-                # remove DN entries
+            to_remove = []
+            for dn_detail_row in payment.get("dn_details"):
                 if dn_detail_row.delivery_note == doc.name:
-                    payment.remove(dn_detail_row)
+                    to_remove.append(dn_detail_row)
+
+            if to_remove:
+                [payment.remove(dn) for dn in to_remove]
+
             payment.save(ignore_permissions=True)
 
 def get_doctype_name_from_je(doc):
