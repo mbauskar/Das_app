@@ -68,14 +68,30 @@ app_version = "0.0.1"
 
 doc_events = {
 	"Delivery Note": {
-		"validate": "das.das_validations.delivery_note_validations"
+		"validate": "das.das_validations.delivery_note_validations",
+		"on_submit": "das.das_payment_info.on_delivery_note_submit",
+		"on_cancel": "das.das_payment_info.on_delivery_note_cancel"
 	},
 	"Sales Invoice": {
-		"validate": "das.das_validations.validations_against_batch_number"
+		# "validate": "das.das_validations.validations_against_batch_number",
+		"on_submit": "das.das_payment_info.on_sales_invoice_submit",
+		"on_cancel": "das.das_payment_info.on_sales_invoice_cancel"
 	},
 	"Purchase Invoice": {
-		"validate": "das.das_validations.validations_against_supplier"
-	}
+		"validate": "das.das_validations.validations_against_supplier",
+		"on_submit": "das.das_payment_info.on_purchase_invoice_submit",
+		"on_cancel": "das.das_payment_info.on_purchase_invoice_cancel"
+	},
+	"Sales Order": {
+		# "validate": "das.das_validations.delivery_note_validations"
+		"on_submit": "das.das_payment_info.on_sales_order_submit",
+		"on_cancel": "das.das_payment_info.on_sales_order_cancel"
+	},
+	"Journal Entry": {
+		# "validate": "das.das_validations.delivery_note_validations"
+		"on_submit": "das.das_payment_info.on_journal_entry_submit",
+		"on_cancel": "das.das_payment_info.on_journal_entry_cancel"
+	},
 }
 
 # Scheduled Tasks
