@@ -123,8 +123,12 @@ get_values = function(me, values){
 			values[i].customClass = 'ganttRed';
 		else
 			values[i].customClass = 'ganttGrey';
-		values[i].from = '/Date('+moment(values[i].from).format("X")+'000)/',
-		values[i].to = '/Date('+moment(values[i].to).format("X")+'000)/',
+
+		var start = dateutil.convert_to_user_tz(values[i].from)
+		var end = dateutil.convert_to_user_tz(values[i].to)
+
+		values[i].from = '/Date('+moment(start).format("X")+'000)/',
+		values[i].to = '/Date('+moment(end).format("X")+'000)/',
 		values[i].dataObj = values[i];
 
 		result_set.push(values[i]);

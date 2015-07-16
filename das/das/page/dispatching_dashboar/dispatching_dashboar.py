@@ -29,7 +29,7 @@ def get_dispach_orders(start, end, filters=None):
 			"name": technician,
 			"values": get_order_details(technician, data)
 		})
-
+		
 	return dataset
 
 def get_order_details(technician, orders):
