@@ -42,10 +42,12 @@ def get_order_details(technician, orders):
 
 			values.append({
 				"name": order.name,
-				"desc": "<div class='row'><div class='col-xs-6'>Delivery Note</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>Customer</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>Technician</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>Start Date</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>End Date</div><div class='col-xs-6'>%s</div></div>"%(order.name, order.customer_name,order.technician, order.start_date, order.end_date),
+				# "desc": "<div class='row'><div class='col-xs-6'>Delivery Note</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>Customer</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>Technician</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>Start Date</div><div class='col-xs-6'>%s</div></div><div class='row'><div class='col-xs-6'>End Date</div><div class='col-xs-6'>%s</div></div>"%(order.name, order.customer_name,order.technician, order.start_date, order.end_date),
 				"from": order.start_date,
 				"to": order.end_date,
-				"status": order.status
+				"status": order.status,
+				"technician": order.technician,
+				"customer": order.customer_name
 			})
 
 	return values
