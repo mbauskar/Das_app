@@ -127,6 +127,11 @@ get_values = function(me, values){
 		var start = dateutil.convert_to_user_tz(values[i].from)
 		var end = dateutil.convert_to_user_tz(values[i].to)
 
+		values[i].desc = "<div class='row'><div class='col-xs-6'>Delivery Note</div><div class='col-xs-6'>"+ values[i].name
+		+"</div></div><div class='row'><div class='col-xs-6'>Customer</div><div class='col-xs-6'>"+ values[i].customer
+		+"</div></div><div class='row'><div class='col-xs-6'>Technician</div><div class='col-xs-6'>"+ values[i].technician
+		+"</div></div><div class='row'><div class='col-xs-6'>Start Date</div><div class='col-xs-6'>"+ start
+		+"</div></div><div class='row'><div class='col-xs-6'>End Date</div><div class='col-xs-6'>"+ end +"</div></div>"
 		values[i].from = '/Date('+moment(start).format("X")+'000)/',
 		values[i].to = '/Date('+moment(end).format("X")+'000)/',
 		values[i].dataObj = values[i];
