@@ -123,9 +123,10 @@ get_values = function(me, values){
 			values[i].customClass = 'ganttRed';
 		else
 			values[i].customClass = 'ganttGrey';
-
+		values[i].from = '/Date('+moment(values[i].from).format("X")+'000)/',
+		values[i].to = '/Date('+moment(values[i].to).format("X")+'000)/',
 		values[i].dataObj = values[i];
-		
+
 		result_set.push(values[i]);
 	};
 
