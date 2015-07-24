@@ -28,7 +28,7 @@ def on_sales_order_cancel(doc,method):
         [payment.remove(row) for row in payment.si_details]
         [payment.remove(row) for row in payment.dn_details]
         # deleting the doc
-        frappe.delete_doc("Payment Information", payment.name)
+        frappe.delete_doc("Payment Information", payment.name, ignore_permissions=True)
 
 def get_payment_information_doc(sales_order):
     payment_doc_name = frappe.db.get_value("Payment Information", {"sales_order":sales_order}, "name")
